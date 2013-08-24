@@ -50,21 +50,6 @@ const char program_version[] = "Unknown";
 // Pins for radio
 const int rf_ce = 9;
 const int rf_csn = 10;
-
-// Pins for sensors
-//const int temp_pin = A2;
-//const int voltage_pin = A3;
-
-// Pins for status LED, or '0' for no LED connected
-//const int led_red = 0; 
-//const int led_yellow = 0; 
-//const int led_green = 0; 
-
-// Button to control modes
-//const int button_a = 4;
-
-// What voltage is a reading of 1023?
-//const unsigned voltage_reference = 5 * 256; // 5.0V
 #endif
 
 RF24 radio(rf_ce,rf_csn);
@@ -73,9 +58,6 @@ RF24Network network(radio);
 // Our node configuration 
 eeprom_info_t this_node;
 
-// How many measurements to take.  64*1024 = 65536, so 64 is the max we can fit in a uint16_t.
-//const int num_measurements = 64;
-
 // Sleep constants.  In this example, the watchdog timer wakes up
 // every 4s, and every single wakeup we power up the radio and send
 // a reading.  In real use, these numbers which be much higher.
@@ -83,133 +65,12 @@ eeprom_info_t this_node;
 const wdt_prescalar_e wdt_prescalar = wdt_4s;
 const int sleep_cycles_per_transmission = 1;
 
-// Non-sleeping nodes need a timer to regulate their sending interval
-//Timer send_timer(2000);
-
-// Button controls functionality of the unit
-//Button ButtonA(button_a);
-
-// Long-press button
-//Button ButtonLong(button_a,1000);
-
 /**
  * Convenience class for handling LEDs.  Handles the case where the
  * LED may not be populated on the board, so always checks whether
  * the pin is valid before setting a value.
  */
 
-/**
-class LED
-{
-private:
-  int pin;
-public:
-  LED(int _pin): pin(_pin)
-  {
-    if (pin > 0)
-    {
-      pinMode(pin,OUTPUT);
-      digitalWrite(pin,LOW);
-    }
-  }
-  void write(bool state) const
-  {
-    if (pin > 0)
-      digitalWrite(pin,state?HIGH:LOW);
-  }
-  void operator=(bool state)
-  {
-    write(state);
-  }
-
-};
-*/
-/**
- * Startup LED sequence.  Lights up the LEDs in sequence first, then dims 
- * them in the same sequence.
- */
-/*
-class StartupLEDs: public Timer
-{
-private:
-  const LED** leds;
-  const LED** current;
-  const LED** end;
-  bool state;
-protected:
-  virtual void onFired(void)
-  {
-    (*current)->write(state);
-    ++current;
-    if ( current >= end )
-    {
-      if ( state )
-      {
-	state = false;
-	current = leds;
-      }
-      else
-	disable();
-    }
-  }
-public:
-  StartupLEDs(const LED** _leds, int _num): Timer(250), leds(_leds), current(_leds), end(_leds+_num), state(true)
-  {
-  }
-};
-*/
-/**
- * Calibration LED sequence.  Flashes all 3 in unison
- */
- /*
-class CalibrationLEDs: public Timer
-{
-  const LED** leds;
-  const LED** end;
-  bool state;
-protected:
-  void write()
-  {
-    const LED** current = end;
-    while (current-- > leds)
-      (*current)->write(state);
-  }
-  virtual void onFired() 
-  {
-    state = ! state;
-    write();
-  }
-public:
-  CalibrationLEDs(const LED** _leds, int _num, unsigned long duration = 500): Timer(duration), leds(_leds), end(_leds+_num), state(false)
-  {
-    Timer::disable();
-  }
-  void begin()
-  {
-    Updatable::begin();
-  }
-  void reset()
-  {
-    state = true;
-    write();
-    Timer::reset();
-  }
-  void disable()
-  {
-    state = false;
-    write();
-    Timer::disable();
-  }
-};
-*/
-/*
-LED Red(led_red), Yellow(led_yellow), Green(led_green);
-
-const LED* leds[] = { &Red, &Yellow, &Green }; 
-const int num_leds = sizeof(leds)/sizeof(leds[0]);
-StartupLEDs startup_leds(leds,num_leds);
-CalibrationLEDs calibration_leds(leds,num_leds);
-*/
 // Nodes in test mode do not sleep, but instead constantly try to send
 bool test_mode = false;
 
@@ -243,23 +104,12 @@ void setup(void)
   if ( ! this_node.relay )
     Sleep.begin(wdt_prescalar,sleep_cycles_per_transmission);
 
-  //
-  // Set up board hardware
-  //
-//  ButtonA.begin();
- // ButtonLong.begin();
-
   // Sensors use the stable internal 1.1V voltage
 #ifdef INTERNAL1V1
   analogReference(INTERNAL1V1);
 #else
   analogReference(INTERNAL);
 #endif
-
-  // Prepare the startup sequence
-//  send_timer.begin();
-//  startup_leds.begin();
-  //calibration_leds.begin();
 
   //
   // Bring up the RF network
@@ -292,38 +142,9 @@ void loop(void)
   // a reading AND we're in the mode where we send readings...
   if ( this_node.address > 0 && ( ( Sleep && ! test_mode )))// || send_timer.wasFired() ) && ! calibration_mode && ! startup_leds )
   {
-    // Transmission beginning, TX LED ON
-//    Yellow = true;
-    if ( test_mode )
-    {
-//      Green = false;
-//      Red = false;
-    }
-
     int i;
     S_message message;
     
-    // Take the temp reading 
-/*    i = num_measurements;
-    uint32_t reading = 0;
-    while(i--)
-      reading += analogRead(temp_pin);
-*/
-    // Convert the reading to celcius*256
-    // This is the formula for MCP9700.
-    // C = reading * 1.1
-    // C = ( V - 1/2 ) * 100
-//    message.temp_reading = ( ( ( reading * 0x120 ) - 0x800000 ) * 0x64 ) >> 16;
-
-    // Take the voltage reading 
-/*    i = num_measurements;
-    reading = 0;
-    while(i--)
-      reading += analogRead(voltage_pin);
-*/
-    // Convert the voltage reading to volts*256
-//    message.voltage_reading = ( reading * voltage_reference ) >> 16; 
-
     printf_P(PSTR("---------------------------------\n\r"));
     printf_P(PSTR("%lu: APP Sending %s to 0%o...\n\r"),millis(),message.toString(),0);
     
@@ -338,14 +159,9 @@ void loop(void)
     }
     else
     {
-      if ( test_mode )
-//	Red = true;
       printf_P(PSTR("%lu: APP Send failed\n\r"),millis());
     }
 
-    // Transmission complete, TX LED OFF
-//    Yellow = false;
-   
     if ( Sleep && ! test_mode ) 
     {
       // Power down the radio.  Note that the radio will get powered back up
@@ -361,36 +177,6 @@ void loop(void)
       Sleep.go();
     }
   }
-
-  // Button
-//  unsigned a = ButtonA.wasReleased();
-/*  if ( a && a < 500 )
-  {
-    // Pressing the button during startup sequences engages test mode.
-    // Pressing it after turns off test mode.
-    if ( startup_leds )
-      test_mode = true;
-    else if ( test_mode )
-    {
-      test_mode = false;
-      Green = false;
-      Red = false;
-    }
-    else if ( calibration_mode )
-    {
-      calibration_mode = false;
-      test_mode = true;
-      calibration_leds.disable();
-    }
-  }*/
-
-  // Long press
-/*  if ( ButtonLong.wasPressed() && test_mode )
-  {
-    test_mode = false;
-    calibration_mode = true;
-    calibration_leds.reset();
-  }*/
 
   // Listen for a new node address
   nodeconfig_listen();
