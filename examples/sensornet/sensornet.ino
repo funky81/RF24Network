@@ -52,19 +52,19 @@ const int rf_ce = 9;
 const int rf_csn = 10;
 
 // Pins for sensors
-const int temp_pin = A2;
-const int voltage_pin = A3;
+//const int temp_pin = A2;
+//const int voltage_pin = A3;
 
 // Pins for status LED, or '0' for no LED connected
-const int led_red = 0; 
-const int led_yellow = 0; 
-const int led_green = 0; 
+//const int led_red = 0; 
+//const int led_yellow = 0; 
+//const int led_green = 0; 
 
 // Button to control modes
-const int button_a = 4;
+//const int button_a = 4;
 
 // What voltage is a reading of 1023?
-const unsigned voltage_reference = 5 * 256; // 5.0V
+//const unsigned voltage_reference = 5 * 256; // 5.0V
 #endif
 
 RF24 radio(rf_ce,rf_csn);
@@ -74,7 +74,7 @@ RF24Network network(radio);
 eeprom_info_t this_node;
 
 // How many measurements to take.  64*1024 = 65536, so 64 is the max we can fit in a uint16_t.
-const int num_measurements = 64;
+//const int num_measurements = 64;
 
 // Sleep constants.  In this example, the watchdog timer wakes up
 // every 4s, and every single wakeup we power up the radio and send
@@ -84,13 +84,13 @@ const wdt_prescalar_e wdt_prescalar = wdt_4s;
 const int sleep_cycles_per_transmission = 1;
 
 // Non-sleeping nodes need a timer to regulate their sending interval
-Timer send_timer(2000);
+//Timer send_timer(2000);
 
 // Button controls functionality of the unit
-Button ButtonA(button_a);
+//Button ButtonA(button_a);
 
 // Long-press button
-Button ButtonLong(button_a,1000);
+//Button ButtonLong(button_a,1000);
 
 /**
  * Convenience class for handling LEDs.  Handles the case where the
@@ -98,6 +98,7 @@ Button ButtonLong(button_a,1000);
  * the pin is valid before setting a value.
  */
 
+/**
 class LED
 {
 private:
@@ -122,12 +123,12 @@ public:
   }
 
 };
-
+*/
 /**
  * Startup LED sequence.  Lights up the LEDs in sequence first, then dims 
  * them in the same sequence.
  */
-
+/*
 class StartupLEDs: public Timer
 {
 private:
@@ -156,10 +157,11 @@ public:
   {
   }
 };
-
+*/
 /**
  * Calibration LED sequence.  Flashes all 3 in unison
  */
+ /*
 class CalibrationLEDs: public Timer
 {
   const LED** leds;
@@ -199,14 +201,15 @@ public:
     Timer::disable();
   }
 };
-
+*/
+/*
 LED Red(led_red), Yellow(led_yellow), Green(led_green);
 
 const LED* leds[] = { &Red, &Yellow, &Green }; 
 const int num_leds = sizeof(leds)/sizeof(leds[0]);
 StartupLEDs startup_leds(leds,num_leds);
 CalibrationLEDs calibration_leds(leds,num_leds);
-
+*/
 // Nodes in test mode do not sleep, but instead constantly try to send
 bool test_mode = false;
 
@@ -243,8 +246,8 @@ void setup(void)
   //
   // Set up board hardware
   //
-  ButtonA.begin();
-  ButtonLong.begin();
+//  ButtonA.begin();
+ // ButtonLong.begin();
 
   // Sensors use the stable internal 1.1V voltage
 #ifdef INTERNAL1V1
@@ -254,9 +257,9 @@ void setup(void)
 #endif
 
   // Prepare the startup sequence
-  send_timer.begin();
-  startup_leds.begin();
-  calibration_leds.begin();
+//  send_timer.begin();
+//  startup_leds.begin();
+  //calibration_leds.begin();
 
   //
   // Bring up the RF network
@@ -270,7 +273,7 @@ void setup(void)
 void loop(void)
 {
   // Update objects
-  theUpdater.update();
+//  theUpdater.update();
 
   // Pump the network regularly
   network.update();
@@ -287,39 +290,39 @@ void loop(void)
 
   // If we are the kind of node that sends readings, AND it's time to send
   // a reading AND we're in the mode where we send readings...
-  if ( this_node.address > 0 && ( ( Sleep && ! test_mode ) || send_timer.wasFired() ) && ! calibration_mode && ! startup_leds )
+  if ( this_node.address > 0 && ( ( Sleep && ! test_mode )))// || send_timer.wasFired() ) && ! calibration_mode && ! startup_leds )
   {
     // Transmission beginning, TX LED ON
-    Yellow = true;
+//    Yellow = true;
     if ( test_mode )
     {
-      Green = false;
-      Red = false;
+//      Green = false;
+//      Red = false;
     }
 
     int i;
     S_message message;
     
     // Take the temp reading 
-    i = num_measurements;
+/*    i = num_measurements;
     uint32_t reading = 0;
     while(i--)
       reading += analogRead(temp_pin);
-
+*/
     // Convert the reading to celcius*256
     // This is the formula for MCP9700.
     // C = reading * 1.1
     // C = ( V - 1/2 ) * 100
-    message.temp_reading = ( ( ( reading * 0x120 ) - 0x800000 ) * 0x64 ) >> 16;
+//    message.temp_reading = ( ( ( reading * 0x120 ) - 0x800000 ) * 0x64 ) >> 16;
 
     // Take the voltage reading 
-    i = num_measurements;
+/*    i = num_measurements;
     reading = 0;
     while(i--)
       reading += analogRead(voltage_pin);
-
+*/
     // Convert the voltage reading to volts*256
-    message.voltage_reading = ( reading * voltage_reference ) >> 16; 
+//    message.voltage_reading = ( reading * voltage_reference ) >> 16; 
 
     printf_P(PSTR("---------------------------------\n\r"));
     printf_P(PSTR("%lu: APP Sending %s to 0%o...\n\r"),millis(),message.toString(),0);
@@ -330,18 +333,18 @@ void loop(void)
     if (ok)
     {
       if ( test_mode )
-	Green = true;
+//	Green = true;
       printf_P(PSTR("%lu: APP Send ok\n\r"),millis());
     }
     else
     {
       if ( test_mode )
-	Red = true;
+//	Red = true;
       printf_P(PSTR("%lu: APP Send failed\n\r"),millis());
     }
 
     // Transmission complete, TX LED OFF
-    Yellow = false;
+//    Yellow = false;
    
     if ( Sleep && ! test_mode ) 
     {
@@ -360,8 +363,8 @@ void loop(void)
   }
 
   // Button
-  unsigned a = ButtonA.wasReleased();
-  if ( a && a < 500 )
+//  unsigned a = ButtonA.wasReleased();
+/*  if ( a && a < 500 )
   {
     // Pressing the button during startup sequences engages test mode.
     // Pressing it after turns off test mode.
@@ -379,15 +382,15 @@ void loop(void)
       test_mode = true;
       calibration_leds.disable();
     }
-  }
+  }*/
 
   // Long press
-  if ( ButtonLong.wasPressed() && test_mode )
+/*  if ( ButtonLong.wasPressed() && test_mode )
   {
     test_mode = false;
     calibration_mode = true;
     calibration_leds.reset();
-  }
+  }*/
 
   // Listen for a new node address
   nodeconfig_listen();
