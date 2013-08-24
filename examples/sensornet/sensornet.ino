@@ -100,17 +100,6 @@ void setup(void)
   // Prepare sleep parameters
   //
 
-  // Only the leaves sleep.  Nodes 01-05 are presumed to be relay nodes. 
-  if ( ! this_node.relay )
-    Sleep.begin(wdt_prescalar,sleep_cycles_per_transmission);
-
-  // Sensors use the stable internal 1.1V voltage
-#ifdef INTERNAL1V1
-  analogReference(INTERNAL1V1);
-#else
-  analogReference(INTERNAL);
-#endif
-
   //
   // Bring up the RF network
   //
@@ -136,11 +125,12 @@ void loop(void)
     S_message message;
     network.read(header,&message,sizeof(message));
     printf_P(PSTR("%lu: APP Received #%u %s from 0%o\n\r"),millis(),header.id,message.toString(),header.from_node);
+    delay(1000);
   }
 
   // If we are the kind of node that sends readings, AND it's time to send
   // a reading AND we're in the mode where we send readings...
-  if ( this_node.address > 0 && ( ( Sleep && ! test_mode )))// || send_timer.wasFired() ) && ! calibration_mode && ! startup_leds )
+  if ( this_node.address > 0 )
   {
     int i;
     S_message message;
@@ -153,8 +143,6 @@ void loop(void)
     bool ok = network.write(header,&message,sizeof(message));
     if (ok)
     {
-      if ( test_mode )
-//	Green = true;
       printf_P(PSTR("%lu: APP Send ok\n\r"),millis());
     }
     else

@@ -84,7 +84,7 @@ void nodeconfig_listen(void)
       else
 	printf_P(PSTR("Please assign an address to commit this role to EEPROM\r\n"));
     }
-    else if ( c == 13 )
+    else if ( c == 'x' )
     {
       // Convert to octal
       char *pc = serialdata;
