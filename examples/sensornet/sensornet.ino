@@ -58,13 +58,6 @@ RF24Network network(radio);
 // Our node configuration 
 eeprom_info_t this_node;
 
-// Sleep constants.  In this example, the watchdog timer wakes up
-// every 4s, and every single wakeup we power up the radio and send
-// a reading.  In real use, these numbers which be much higher.
-// Try wdt_8s and 7 cycles for one reading per minute.> 1
-const wdt_prescalar_e wdt_prescalar = wdt_4s;
-const int sleep_cycles_per_transmission = 1;
-
 /**
  * Convenience class for handling LEDs.  Handles the case where the
  * LED may not be populated on the board, so always checks whether
@@ -73,9 +66,6 @@ const int sleep_cycles_per_transmission = 1;
 
 // Nodes in test mode do not sleep, but instead constantly try to send
 bool test_mode = false;
-
-// Nodes in calibration mode are looking for temperature calibration
-bool calibration_mode = false;
 
 void setup(void)
 {
@@ -88,22 +78,13 @@ void setup(void)
   printf_P(PSTR("\n\rRF24Network/examples/sensornet/\n\r"));
   printf_P(PSTR("PLATFORM: " __PLATFORM__ "\n\r"),program_version);
   printf_P(PSTR("VERSION: %s\n\r"),program_version);
-  
-  //
-  // Pull node address out of eeprom 
-  //
 
   // Which node are we?
   this_node = nodeconfig_read();
 
   //
-  // Prepare sleep parameters
-  //
-
-  //
   // Bring up the RF network
   //
-
   SPI.begin();
   radio.begin();
   network.begin(/*channel*/ 92, /*node address*/ this_node.address);
@@ -111,13 +92,11 @@ void setup(void)
 
 void loop(void)
 {
-  // Update objects
-//  theUpdater.update();
-
   // Pump the network regularly
   network.update();
 
   // If we are the base, is there anything ready for us?
+  // This one is for base, what are you gonna do with base
   while ( network.available() )
   {
     // If so, grab it and print it out
@@ -130,6 +109,7 @@ void loop(void)
 
   // If we are the kind of node that sends readings, AND it's time to send
   // a reading AND we're in the mode where we send readings...
+  // This one is for Leaf or Nodes action either you want to send data or receive data with something
   if ( this_node.address > 0 )
   {
     int i;
@@ -148,21 +128,6 @@ void loop(void)
     else
     {
       printf_P(PSTR("%lu: APP Send failed\n\r"),millis());
-    }
-
-    if ( Sleep && ! test_mode ) 
-    {
-      // Power down the radio.  Note that the radio will get powered back up
-      // on the next write() call.
-      radio.powerDown();
-
-      // Be sure to flush the serial first before sleeping, so everything
-      // gets printed properly
-      Serial.flush();
-      
-      // Sleep the MCU.  The watchdog timer will awaken in a short while, and
-      // continue execution here.
-      Sleep.go();
     }
   }
 
